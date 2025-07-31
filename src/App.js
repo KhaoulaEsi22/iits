@@ -6,13 +6,17 @@ const API_URL = "https://api.sheetbest.com/sheets/1aca05ed-d6f2-460f-802f-15b0f0
 
 function App() {
   const [prospects, setProspects] = useState([]);
+  const [authorized, setAuthorized] = useState(false);
+  const [input, setInput] = useState('');
 
   // Charger les données depuis Google Sheet
   useEffect(() => {
-    axios.get(API_URL)
-      .then(res => setProspects(res.data))
-      .catch(err => console.error("Erreur de chargement :", err));
-  }, []);
+    if (authorized) {
+      axios.get(API_URL)
+        .then(res => setProspects(res.data))
+        .catch(err => console.error("Erreur de chargement :", err));
+    }
+  }, [authorized]);
 
   // Copier le message personnalisé
   const handleCopy = (message) => {
@@ -20,10 +24,14 @@ function App() {
     alert("📋 Message copié !");
   };
 
-  // Marquer comme envoyé (met à jour Google Sheet)
+  // Marquer comme envoyé (mettre à jour la feuille)
   const handleStatusUpdate = (prospect) => {
+    // ATTENTION : La mise à jour doit cibler une URL ou un endpoint qui identifie la ligne
+    // Exemple (à adapter selon l'API Sheetbest) :
+    // axios.patch(`${API_URL}/rows/{id}`, { Statut: "Envoyé ✅" })
+
     axios.patch(API_URL, {
-      "LinkedIn": prospect.LinkedIn, // Clé utilisée pour identifier la ligne
+      "LinkedIn": prospect.LinkedIn, // Clé pour identifier la ligne (vérifie si c’est correct avec ton API)
       "Statut": "Envoyé ✅"
     })
     .then(() => {
@@ -35,6 +43,26 @@ function App() {
     })
     .catch(err => alert("Erreur de mise à jour :", err));
   };
+
+  if (!authorized) {
+    return (
+      <div className="container">
+        <h2>🔐 Accès privé</h2>
+        <input
+          type="password"
+          placeholder="Mot de passe"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+        <button onClick={() => {
+          if (input === "monmotdepasse") setAuthorized(true);
+          else alert("Mot de passe incorrect");
+        }}>
+          Accéder
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="container">
